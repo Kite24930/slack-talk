@@ -1,0 +1,35 @@
+[project]
+name = "slack-talk"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Kite24930",email = "nt930.kt311@gmail.com"}
+]
+readme = "README.md"
+requires-python = "^3.11"
+dependencies = [
+    "slack-sdk (>=3.41.0,<4.0.0)",
+    "aiosqlite (>=0.22.1,<0.23.0)",
+    "websockets (>=16.0,<17.0)",
+    "sounddevice (>=0.5.5,<0.6.0)",
+    "numpy (>=2.4.3,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-asyncio (>=1.3.0,<2.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)"
+]
+
+[project.scripts]
+slack-talk = "slack_talk.main:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
