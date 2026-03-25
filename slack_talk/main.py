@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from slack_talk.app import App
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
@@ -16,8 +18,9 @@ def main() -> None:
 
 
 async def _run() -> None:
-    # App クラスは Task 4 で実装
-    logger.info("slack-talk running (no services registered yet)")
+    app = App(services=[])
+    await app.start()
+    logger.info("slack-talk finished")
 
 
 if __name__ == "__main__":
