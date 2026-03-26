@@ -13,7 +13,10 @@ dependencies = [
     "websockets (>=16.0,<17.0)",
     "sounddevice (>=0.5.5,<0.6.0)",
     "numpy (>=2.4.3,<3.0.0)",
-    "aiohttp (>=3.13.3,<4.0.0)"
+    "aiohttp (>=3.13.3,<4.0.0)",
+    "torch (>=2.7.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
+    "torchaudio (>=2.7.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
+    "hume-tada (>=0.1.8,<1.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\""
 ]
 
 
@@ -34,3 +37,6 @@ slack-talk = "slack_talk.main:main"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
