@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { MessageArea } from './components/MessageArea';
+import { Settings } from './components/Settings';
 import { useAppStore } from './store/appStore';
 import { useWebSocket } from './hooks/useWebSocket';
 import './styles/global.css';
@@ -13,8 +14,10 @@ function App() {
     theme,
     connected,
     setActiveChannel,
+    setTheme,
   } = useAppStore();
   const { send } = useWebSocket();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -50,12 +53,23 @@ function App() {
         channels={sidebarChannels}
         activeChannelId={activeChannelId}
         onSelectChannel={handleSelectChannel}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
-      <MessageArea
-        channelName={activeChannel?.name || 'チャンネルを選択'}
-        messages={activeMessages}
-        onOpenThread={() => {}}
-      />
+      {settingsOpen ? (
+        <Settings
+          send={send}
+          channels={channels}
+          theme={theme}
+          setTheme={setTheme}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : (
+        <MessageArea
+          channelName={activeChannel?.name || 'チャンネルを選択'}
+          messages={activeMessages}
+          onOpenThread={() => {}}
+        />
+      )}
       {!connected && (
         <div style={{
           position: 'fixed',

@@ -12,9 +12,10 @@ interface SidebarProps {
   channels: Channel[];
   activeChannelId: string | null;
   onSelectChannel: (id: string) => void;
+  onOpenSettings?: () => void;
 }
 
-export function Sidebar({ channels, activeChannelId, onSelectChannel }: SidebarProps) {
+export function Sidebar({ channels, activeChannelId, onSelectChannel, onOpenSettings }: SidebarProps) {
   const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -55,7 +56,7 @@ export function Sidebar({ channels, activeChannelId, onSelectChannel }: SidebarP
         ))}
       </div>
       <div className="sidebar-footer">
-        <button className="settings-btn">Settings</button>
+        <button className="settings-btn" onClick={onOpenSettings}>Settings</button>
       </div>
     </div>
   );
