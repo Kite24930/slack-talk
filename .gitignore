@@ -26,6 +26,7 @@ node_modules/
 # Tauri build output
 # ============================================
 ui/src-tauri/target/
+ui/dist/
 
 # ============================================
 # Environment / Secrets
