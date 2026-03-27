@@ -17,7 +17,9 @@ dependencies = [
     "torch (>=2.7.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
     "torchaudio (>=2.7.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
     "hume-tada (>=0.1.8,<1.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
-    "openai-whisper (>=20250625,<20250626)"
+    "openai-whisper (>=20250625,<20250626)",
+    "pvporcupine (>=4.0.2,<5.0.0)",
+    "pvrecorder (>=1.2.7,<2.0.0)"
 ]
 
 
