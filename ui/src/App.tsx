@@ -1,56 +1,75 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { MessageArea } from './components/MessageArea';
-import type { Message } from './components/MessageArea';
-import { ThreadPanel } from './components/ThreadPanel';
+import { useAppStore } from './store/appStore';
+import { useWebSocket } from './hooks/useWebSocket';
 import './styles/global.css';
 
-// Mock data for development
-const MOCK_CHANNELS = [
-  { id: 'C1', name: 'general', ttsEnabled: true, threads: [{ id: 't1', title: 'デプロイの件' }] },
-  { id: 'C2', name: 'random', ttsEnabled: false, threads: [] },
-  { id: 'C3', name: 'dev', ttsEnabled: true, threads: [{ id: 't2', title: 'バグ修正PR' }] },
-];
-
-const MOCK_MESSAGES: Message[] = [
-  { id: 'm1', userName: 'Taro', text: 'お疲れ様です', timestamp: '14:30', priority: 'normal' },
-  { id: 'm2', userName: 'Bot', text: 'デプロイ失敗', timestamp: '14:35', priority: 'error' },
-  {
-    id: 'm3', userName: 'Hanako', text: '確認お願いします', timestamp: '14:31', priority: 'mention',
-    threadReplies: [{ userName: 'Taro', text: '送ります', timestamp: '14:32' }],
-    threadTotalCount: 3,
-  },
-];
-
 function App() {
-  const [activeChannelId, setActiveChannelId] = useState<string | null>('C1');
-  const [threadOpen, setThreadOpen] = useState(false);
+  const {
+    channels,
+    activeChannelId,
+    messages,
+    theme,
+    connected,
+    setActiveChannel,
+  } = useAppStore();
+  const { send } = useWebSocket();
 
-  document.documentElement.setAttribute('data-theme', 'dark');
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Request initial data when connected
+  useEffect(() => {
+    if (connected) {
+      send({ type: 'get_channels' });
+      send({ type: 'get_settings' });
+    }
+  }, [connected, send]);
+
+  const activeChannel = channels.find(ch => ch.id === activeChannelId);
+  const activeMessages = activeChannelId ? (messages[activeChannelId] || []) : [];
+
+  const handleSelectChannel = (id: string) => {
+    setActiveChannel(id);
+    send({ type: 'set_active_channel', data: { channel_id: id } });
+  };
+
+  // Map channels to sidebar format
+  const sidebarChannels = channels.map(ch => ({
+    id: ch.id,
+    name: ch.name,
+    ttsEnabled: ch.ttsEnabled,
+    threads: ch.threads || [],
+  }));
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       <Sidebar
-        channels={MOCK_CHANNELS}
+        channels={sidebarChannels}
         activeChannelId={activeChannelId}
-        onSelectChannel={setActiveChannelId}
+        onSelectChannel={handleSelectChannel}
       />
       <MessageArea
-        channelName="general"
-        messages={MOCK_MESSAGES}
-        onOpenThread={() => setThreadOpen(true)}
+        channelName={activeChannel?.name || 'チャンネルを選択'}
+        messages={activeMessages}
+        onOpenThread={() => {}}
       />
-      <ThreadPanel
-        visible={threadOpen}
-        parentText="確認お願いします"
-        parentAuthor="Hanako"
-        replies={[
-          { userName: 'Taro', text: '送ります', timestamp: '14:32' },
-          { userName: 'Hanako', text: 'ありがとう！', timestamp: '14:33' },
-          { userName: 'Taro', text: '完了しました', timestamp: '14:34' },
-        ]}
-        onClose={() => setThreadOpen(false)}
-      />
+      {!connected && (
+        <div style={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          background: 'var(--accent-red)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: 8,
+          fontSize: 13,
+        }}>
+          バックエンド未接続
+        </div>
+      )}
     </div>
   );
 }
