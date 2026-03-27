@@ -16,7 +16,8 @@ dependencies = [
     "aiohttp (>=3.13.3,<4.0.0)",
     "torch (>=2.7.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
     "torchaudio (>=2.7.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
-    "hume-tada (>=0.1.8,<1.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\""
+    "hume-tada (>=0.1.8,<1.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\"",
+    "openai-whisper (>=20250625,<20250626)"
 ]
 
 
