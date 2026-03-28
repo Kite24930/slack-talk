@@ -7,6 +7,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 
+class TTSEngineType(Enum):
+    TADA = "tada"
+    VOICEVOX = "voicevox"
+
+
 class VoiceState(Enum):
     IDLE = "idle"
     WAKEWORD_DETECTED = "wakeword_detected"
@@ -57,12 +62,15 @@ class ChannelConfig:
 
 @dataclass
 class AudioSettings:
+    tts_engine: str = "tada"
     speech_rate: float = 1.0
     volume: float = 0.8
     queue_ttl_seconds: int = 300
     retry_count: int = 2
     flow_matching_steps: int = 10
     reference_audio_path: str | None = None
+    voicevox_speaker_id: int = 1
+    voicevox_url: str = "http://127.0.0.1:50021"
 
 
 @dataclass

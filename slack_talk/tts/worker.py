@@ -31,6 +31,14 @@ class TTSWorker:
         return "TTSWorker"
 
     @property
+    def engine(self) -> Any:
+        return self._engine
+
+    @engine.setter
+    def engine(self, value: Any) -> None:
+        self._engine = value
+
+    @property
     def last_channel_id(self) -> str | None:
         return self._last_channel_id
 

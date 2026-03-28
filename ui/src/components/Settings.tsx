@@ -26,11 +26,29 @@ const TABS: { id: TabId; label: string }[] = [
 
 export function Settings({ send, channels, theme, setTheme, onClose }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('slack');
+  const [ttsEngine, setTtsEngine] = useState('tada');
   const [volume, setVolume] = useState(0.8);
   const [flowMatchingSteps, setFlowMatchingSteps] = useState(16);
   const [wakeword, setWakeword] = useState('OK Slack');
   const [silenceThreshold, setSilenceThreshold] = useState(2.0);
   const [threadPreviewCount, setThreadPreviewCount] = useState(3);
+  const [voicevoxSpeakerId, setVoicevoxSpeakerId] = useState(1);
+  const [voicevoxUrl, setVoicevoxUrl] = useState('http://127.0.0.1:50021');
+
+  const handleTtsEngineChange = (value: string) => {
+    setTtsEngine(value);
+    send({ type: 'update_setting', data: { key: 'tts_engine', value } });
+  };
+
+  const handleVoicevoxSpeakerIdChange = (value: number) => {
+    setVoicevoxSpeakerId(value);
+    send({ type: 'update_setting', data: { key: 'voicevox_speaker_id', value } });
+  };
+
+  const handleVoicevoxUrlChange = (value: string) => {
+    setVoicevoxUrl(value);
+    send({ type: 'update_setting', data: { key: 'voicevox_url', value } });
+  };
 
   const handleToggleTts = (channel: Channel) => {
     send({
@@ -155,6 +173,23 @@ export function Settings({ send, channels, theme, setTheme, onClose }: SettingsP
 
       <div className="setting-row">
         <div>
+          <div className="setting-label">TTSエンジン</div>
+          <div className="setting-description">読み上げに使用するエンジンを選択</div>
+        </div>
+        <div className="setting-control">
+          <select
+            className="settings-input-select"
+            value={ttsEngine}
+            onChange={e => handleTtsEngineChange(e.target.value)}
+          >
+            <option value="tada">TADA (HumeAI)</option>
+            <option value="voicevox">VOICEVOX</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="setting-row">
+        <div>
           <div className="setting-label">音量</div>
           <div className="setting-description">読み上げ音声の音量 (0.0 - 1.0)</div>
         </div>
@@ -172,24 +207,62 @@ export function Settings({ send, channels, theme, setTheme, onClose }: SettingsP
         </div>
       </div>
 
-      <div className="setting-row">
-        <div>
-          <div className="setting-label">Flow Matching Steps</div>
-          <div className="setting-description">TTS生成品質 (1 - 50, 大きいほど高品質)</div>
+      {ttsEngine === 'tada' && (
+        <div className="setting-row">
+          <div>
+            <div className="setting-label">Flow Matching Steps</div>
+            <div className="setting-description">TTS生成品質 (1 - 50, 大きいほど高品質)</div>
+          </div>
+          <div className="setting-control">
+            <input
+              type="range"
+              className="settings-input-range"
+              min="1"
+              max="50"
+              step="1"
+              value={flowMatchingSteps}
+              onChange={e => handleFlowMatchingStepsChange(parseInt(e.target.value, 10))}
+            />
+            <span className="setting-value">{flowMatchingSteps}</span>
+          </div>
         </div>
-        <div className="setting-control">
-          <input
-            type="range"
-            className="settings-input-range"
-            min="1"
-            max="50"
-            step="1"
-            value={flowMatchingSteps}
-            onChange={e => handleFlowMatchingStepsChange(parseInt(e.target.value, 10))}
-          />
-          <span className="setting-value">{flowMatchingSteps}</span>
-        </div>
-      </div>
+      )}
+
+      {ttsEngine === 'voicevox' && (
+        <>
+          <div className="setting-row">
+            <div>
+              <div className="setting-label">話者ID</div>
+              <div className="setting-description">VOICEVOXの話者ID (0以上の整数)</div>
+            </div>
+            <div className="setting-control">
+              <input
+                type="number"
+                className="settings-input-number"
+                min="0"
+                step="1"
+                value={voicevoxSpeakerId}
+                onChange={e => handleVoicevoxSpeakerIdChange(parseInt(e.target.value, 10))}
+              />
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <div>
+              <div className="setting-label">VOICEVOX URL</div>
+              <div className="setting-description">VOICEVOXエンジンのURL</div>
+            </div>
+            <div className="setting-control">
+              <input
+                type="text"
+                className="settings-input-text"
+                value={voicevoxUrl}
+                onChange={e => handleVoicevoxUrlChange(e.target.value)}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="setting-row">
         <div>

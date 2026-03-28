@@ -51,6 +51,12 @@ INSERT OR IGNORE INTO voice_settings (id) VALUES (1);
 INSERT OR IGNORE INTO display_settings (id) VALUES (1);
 """
 
+_MIGRATION_V2 = """
+ALTER TABLE audio_settings ADD COLUMN tts_engine TEXT NOT NULL DEFAULT 'tada';
+ALTER TABLE audio_settings ADD COLUMN voicevox_speaker_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE audio_settings ADD COLUMN voicevox_url TEXT NOT NULL DEFAULT 'http://127.0.0.1:50021';
+"""
+
 
 class ConfigManager:
     def __init__(self, db_path: str = "slack_talk.db") -> None:
@@ -62,6 +68,14 @@ class ConfigManager:
         self._db.row_factory = aiosqlite.Row
         await self._db.executescript(_SCHEMA)
         await self._db.executescript(_SEED)
+        # Run migrations (ignore if columns already exist)
+        for stmt in _MIGRATION_V2.strip().split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                try:
+                    await self._db.execute(stmt)
+                except Exception:
+                    pass  # Column already exists
         await self._db.commit()
         logger.info("ConfigManager initialized: %s", self._db_path)
 
@@ -134,27 +148,34 @@ class ConfigManager:
         ) as cur:
             r = await cur.fetchone()
         return AudioSettings(
+            tts_engine=r["tts_engine"],
             speech_rate=r["speech_rate"],
             volume=r["volume"],
             queue_ttl_seconds=r["queue_ttl_seconds"],
             retry_count=r["retry_count"],
             flow_matching_steps=r["flow_matching_steps"],
             reference_audio_path=r["reference_audio_path"],
+            voicevox_speaker_id=r["voicevox_speaker_id"],
+            voicevox_url=r["voicevox_url"],
         )
 
     async def save_audio_settings(self, s: AudioSettings) -> None:
         await self.db.execute(
             """UPDATE audio_settings SET
-               speech_rate=?, volume=?, queue_ttl_seconds=?,
-               retry_count=?, flow_matching_steps=?, reference_audio_path=?
+               tts_engine=?, speech_rate=?, volume=?, queue_ttl_seconds=?,
+               retry_count=?, flow_matching_steps=?, reference_audio_path=?,
+               voicevox_speaker_id=?, voicevox_url=?
                WHERE id = 1""",
             (
+                s.tts_engine,
                 s.speech_rate,
                 s.volume,
                 s.queue_ttl_seconds,
                 s.retry_count,
                 s.flow_matching_steps,
                 s.reference_audio_path,
+                s.voicevox_speaker_id,
+                s.voicevox_url,
             ),
         )
         await self.db.commit()

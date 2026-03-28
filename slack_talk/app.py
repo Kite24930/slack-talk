@@ -73,6 +73,7 @@ async def create_app(
     from slack_talk.stt.voice_sender import VoiceSender
     from slack_talk.stt.wakeword import WakeWordEngine
     from slack_talk.tts.engine import TTSEngine
+    from slack_talk.tts.voicevox import VoicevoxEngine
     from slack_talk.tts.worker import TTSWorker
 
     # --- Config ---
@@ -88,15 +89,30 @@ async def create_app(
 
     # --- TTS Pipeline ---
     tts_queue = TTSQueue(ttl_seconds=audio_settings.queue_ttl_seconds)
-    tts_engine = TTSEngine(
+
+    # Create both TTS engines
+    tts_engine_tada = TTSEngine(
         reference_audio_path=audio_settings.reference_audio_path,
         flow_matching_steps=audio_settings.flow_matching_steps,
         volume=audio_settings.volume,
     )
+    voicevox_engine = VoicevoxEngine(
+        base_url=audio_settings.voicevox_url,
+        speaker_id=audio_settings.voicevox_speaker_id,
+        volume=audio_settings.volume,
+        speed_scale=audio_settings.speech_rate,
+    )
+
+    # Select active engine based on settings
+    if audio_settings.tts_engine == "voicevox":
+        active_tts = voicevox_engine
+    else:
+        active_tts = tts_engine_tada
+
     audio_player = AudioPlayer(output_device=voice_settings.output_device)
     tts_worker = TTSWorker(
         queue=tts_queue,
-        engine=tts_engine,
+        engine=active_tts,
         player=audio_player,
         retry_count=audio_settings.retry_count,
     )
@@ -216,12 +232,15 @@ async def create_app(
                 "type": "settings",
                 "data": {
                     "audio": {
+                        "tts_engine": audio_s.tts_engine,
                         "speech_rate": audio_s.speech_rate,
                         "volume": audio_s.volume,
                         "queue_ttl_seconds": audio_s.queue_ttl_seconds,
                         "retry_count": audio_s.retry_count,
                         "flow_matching_steps": audio_s.flow_matching_steps,
                         "reference_audio_path": audio_s.reference_audio_path,
+                        "voicevox_speaker_id": audio_s.voicevox_speaker_id,
+                        "voicevox_url": audio_s.voicevox_url,
                     },
                     "voice": {
                         "wakeword": voice_s.wakeword,
@@ -249,10 +268,30 @@ async def create_app(
 
             new_settings = AudioSettings(**payload)
             await config.save_audio_settings(new_settings)
-            tts_engine.update_settings(
-                flow_matching_steps=new_settings.flow_matching_steps,
-                volume=new_settings.volume,
-            )
+
+            # Update engine-specific settings
+            if new_settings.tts_engine == "voicevox":
+                voicevox_engine.update_settings(
+                    speaker_id=new_settings.voicevox_speaker_id,
+                    volume=new_settings.volume,
+                    speed_scale=new_settings.speech_rate,
+                    base_url=new_settings.voicevox_url,
+                )
+                # Switch active engine if changed
+                if tts_worker.engine is not voicevox_engine:
+                    await voicevox_engine.start()
+                    tts_worker.engine = voicevox_engine
+                    logger.info("TTS engine switched to VOICEVOX")
+            else:
+                tts_engine_tada.update_settings(
+                    flow_matching_steps=new_settings.flow_matching_steps,
+                    volume=new_settings.volume,
+                )
+                # Switch active engine if changed
+                if tts_worker.engine is not tts_engine_tada:
+                    await tts_engine_tada.start()
+                    tts_worker.engine = tts_engine_tada
+                    logger.info("TTS engine switched to TADA")
 
         elif settings_type == "voice":
             from slack_talk.core.models import VoiceSettings
@@ -279,7 +318,7 @@ async def create_app(
         # VoiceSender should lazy-load it on first wakeword detection.
         # TODO: Implement lazy-loading of WhisperSTT in VoiceSender
         stt=None,
-        tts=tts_engine,
+        tts=active_tts,
         player=audio_player,
         slack=slack_listener,
         channel_map=channel_map,
@@ -287,8 +326,8 @@ async def create_app(
     )
 
     # --- Start TTS engine (no run() loop, just needs initialization) ---
-    # TTSEngine loads the model which takes time, so start it eagerly.
-    await tts_engine.start()
+    # Start the active engine. TADA loads a model (takes time), VOICEVOX just opens HTTP session.
+    await active_tts.start()
 
     # --- Build service list ---
     services: list[Any] = [
