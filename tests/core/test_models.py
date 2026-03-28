@@ -9,6 +9,7 @@ from slack_talk.core.models import (
     MessagePriority,
     QueuedMessage,
     SlackMessage,
+    TTSEngineType,
     VoiceSettings,
     VoiceState,
 )
@@ -77,15 +78,24 @@ class TestChannelConfig:
         assert ch.tts_enabled is False
 
 
+class TestTTSEngineType:
+    def test_values(self):
+        assert TTSEngineType.TADA.value == "tada"
+        assert TTSEngineType.VOICEVOX.value == "voicevox"
+
+
 class TestAudioSettings:
     def test_defaults(self):
         settings = AudioSettings()
+        assert settings.tts_engine == "tada"
         assert settings.speech_rate == 1.0
         assert settings.volume == 0.8
         assert settings.queue_ttl_seconds == 300
         assert settings.retry_count == 2
         assert settings.flow_matching_steps == 10
         assert settings.reference_audio_path is None
+        assert settings.voicevox_speaker_id == 1
+        assert settings.voicevox_url == "http://127.0.0.1:50021"
 
 
 class TestVoiceSettings:
